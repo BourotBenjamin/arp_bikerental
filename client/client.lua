@@ -1,19 +1,6 @@
-ESX                                                                         = nil
-local PlayerData                                                            = {}
 local onBike, timerMinutesEnabled, timerMinutes, timerSeconds, counter      = false, false, nil, nil, false
+local QBCore = exports['qb-core']:GetCoreObject()
 
-Citizen.CreateThread(function()
-	while ESX == nil do
-		TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-		Citizen.Wait(0)
-		PlayerData = ESX.GetPlayerData()
-	end
-end)
-
-RegisterNetEvent('esx:playerLoaded')
-AddEventHandler('esx:playerLoaded', function(xPlayer)
-    PlayerData = xPlayer
-end)
 	
 Citizen.CreateThread(function()
 	for k,v in pairs(Config.RentPlaces) do
@@ -58,11 +45,12 @@ end)
 
 RegisterNetEvent('arp_bikerental:getBike')
 AddEventHandler('arp_bikerental:getBike', function(vehicleType, rentalTime)
-    local player = GetPlayerPed(-1)
+    local player = PlayerPedId()
     local playerCoords = GetEntityCoords(player, false)
     local playerHeading = GetEntityHeading(player, false)
 
-    ESX.Game.SpawnVehicle(GetHashKey(vehicleType), playerCoords, playerHeading, function(bike)
+    QBCore.Functions.SpawnVehicle(vehicleType, function(bike)
+        SetEntityHeading(bike, playerHeading)
         TaskWarpPedIntoVehicle(player, bike, -1)
         if (IsEntityAMissionEntity(bike) == false) then
             SetEntityAsMissionEntity(bike, true, true)
@@ -78,15 +66,28 @@ AddEventHandler('arp_bikerental:getBike', function(vehicleType, rentalTime)
         onBike = false
         if IsPedInVehicle(player, bike, true) then
             FreezeEntityPosition(bike, true)
-            notification(Config.NotificationSettings.title, Config.NotificationSettings.subject, Config.NotificationSettings.message, Config.NotificationSettings.icon, Config.NotificationSettings.iconIndex)
+
+            QB.Screen.Notification(
+                Config.NotificationSettings.title,
+                Config.NotificationSettings.message,
+                Config.NotificationSettings.icon,
+                1000,
+                "blue"
+            );
             TaskLeaveVehicle(player, bike, 1)
             Wait(1000)
             DeleteVehicle(bike)
         else
-            notification(Config.NotificationSettings.title, Config.NotificationSettings.subject, Config.NotificationSettings.message, Config.NotificationSettings.icon, Config.NotificationSettings.iconIndex)
+            QB.Screen.Notification(
+                Config.NotificationSettings.title,
+                Config.NotificationSettings.message,
+                Config.NotificationSettings.icon,
+                1000,
+                "blue"
+            );
             DeleteVehicle(bike)
         end
-    end)
+    end, playerCoords, true)
 end)
 
 Citizen.CreateThread(function()
@@ -141,73 +142,64 @@ Citizen.CreateThread(function()
 end)
 
 function OpenBikeMenu()
-    ESX.UI.Menu.CloseAll()
+    MenuV:CloseAll()
 
-    ESX.UI.Menu.Open(
-        'default', GetCurrentResourceName(), 'bike_menu',
-        {
-            title    = 'Bike-Rental',
-            align    = 'center',
-            elements = {
-                {label = Config.BikeNames.cruiser .. ' (<span style="color:lightgreen;">'   .. Config.Currency .. ' ' .. Config.Prices.cruiser .. '</span>/<span style="color:lightblue;">Minute</span>)',      value = 'cruiser'},
-		{label = Config.BikeNames.bmx .. ' (<span style="color:lightgreen;">'       .. Config.Currency .. ' ' .. Config.Prices.bmx.. '</span>/<span style="color:lightblue;">Minute</span>)',          value = 'bmx'},
-		{label = Config.BikeNames.fixter .. ' (<span style="color:lightgreen;">'    .. Config.Currency .. ' ' .. Config.Prices.fixter.. '</span>/<span style="color:lightblue;">Minute</span>)',        value = 'fixter'},
-		{label = Config.BikeNames.scorcher .. ' (<span style="color:lightgreen;">'  .. Config.Currency .. ' ' .. Config.Prices.scorcher.. '</span>/<span style="color:lightblue;">Minute</span>)',      value = 'scorcher'},
-                {label = Config.BikeNames.tribike .. ' (<span style="color:lightgreen;">'   .. Config.Currency .. ' ' .. Config.Prices.tribike.. '</span>/<span style="color:lightblue;">Minute</span>)',       value = 'tribike'},
-                {label = Config.BikeNames.tribike2 .. ' (<span style="color:lightgreen;">'  .. Config.Currency .. ' ' .. Config.Prices.tribike2.. '</span>/<span style="color:lightblue;">Minute</span>)',      value = 'tribike2'},
-                {label = Config.BikeNames.tribike3 .. ' (<span style="color:lightgreen;">'  .. Config.Currency .. ' ' .. Config.Prices.tribike3.. '</span>/<span style="color:lightblue;">Minute</span>)',      value = 'tribike3'},
-            }
-        },
-        function(data, menu)
-            if data.current.value == 'cruiser' then
-				ESX.UI.Menu.CloseAll()
-                rentBike('cruiser')
-            elseif data.current.value == 'bmx' then
-                ESX.UI.Menu.CloseAll()
-                rentBike('bmx')
-            elseif data.current.value == 'fixter' then
-                ESX.UI.Menu.CloseAll()
-                rentBike('fixter')
-            elseif data.current.value == 'scorcher' then
-                ESX.UI.Menu.CloseAll()
-                rentBike('scorcher')
-            elseif data.current.value == 'tribike' then
-                ESX.UI.Menu.CloseAll()
-                rentBike('tribike')
-            elseif data.current.value == 'tribike2' then
-                ESX.UI.Menu.CloseAll()
-                rentBike('tribike2')
-            elseif data.current.value == 'tribike3' then
-                ESX.UI.Menu.CloseAll()
-                rentBike('tribike3')
-            end
-        end,
-        function(data, menu)
-            menu.close()
-        end
-    )
+    local menu = MenuV:CreateMenu('Bike Rental', 'Chose a bike', 'topleft', 255, 0, 0)
+    local menu_button = menu:AddButton({ label = Config.BikeNames.cruiser, value = 'cruiser', description = Config.Currency .. ' ' .. Config.Prices.cruiser .. '/ Minute' })
+    menu_button:On("select", function()
+        MenuV:CloseMenu(menu)
+        rentBike('cruiser')
+    end)
+    local menu_button = menu:AddButton({ label = Config.BikeNames.bmx, value = 'bmx', description = Config.Currency .. ' ' .. Config.Prices.bmx .. '/ Minute' })
+    menu_button:On("select", function()
+        MenuV:CloseMenu(menu)
+        rentBike('bmx')
+    end)
+    local menu_button = menu:AddButton({ label = Config.BikeNames.fixter, value = 'fixter', description = Config.Currency .. ' ' .. Config.Prices.fixter .. '/ Minute' })
+    menu_button:On("select", function()
+        MenuV:CloseMenu(menu)
+        rentBike('fixter')
+    end)
+    local menu_button = menu:AddButton({ label = Config.BikeNames.scorcher, value = 'scorcher', description = Config.Currency .. ' ' .. Config.Prices.scorcher .. '/ Minute' })
+    menu_button:On("select", function()
+        MenuV:CloseMenu(menu)
+        rentBike('scorcher')
+    end)
+    local menu_button = menu:AddButton({ label = Config.BikeNames.tribike, value = 'tribike', description = Config.Currency .. ' ' .. Config.Prices.tribike .. '/ Minute' })
+    menu_button:On("select", function()
+        MenuV:CloseMenu(menu)
+        rentBike('tribike')
+    end)
+    local menu_button = menu:AddButton({ label = Config.BikeNames.tribike2, value = 'tribike2', description = Config.Currency .. ' ' .. Config.Prices.tribike2 .. '/ Minute' })
+    menu_button:On("select", function()
+        MenuV:CloseMenu(menu)
+        rentBike('tribike2')
+    end)
+    local menu_button = menu:AddButton({ label = Config.BikeNames.tribike3, value = 'tribike3', description = Config.Currency .. ' ' .. Config.Prices.tribike3 .. '/ Minute' })
+    menu_button:On("select", function()
+        MenuV:CloseMenu(menu)
+        rentBike('tribike3')
+    end)
+    menu:Open()
 end
 
 function rentBike(bikeType)
-    ESX.UI.Menu.Open('dialog', GetCurrentResourceName(), 'rent_menu',
-        {
-        title = ('How many time do you want to rent this bike? (In minutes)')
-        },
-        function(data, menu)
-            local amount = tonumber(data.value)
-            if amount == nil or amount >= 59 then
-                ESX.ShowNotification('~r~Invalid~s~ amount or you want to rent it for ~r~too long~s~! (min: ~o~1~s~, max: ~g~59~s~)')
-            elseif amount == 0 then
-                menu.close()
-            else
-                menu.close()
-                timer = amount
-                TriggerServerEvent('arp_bikerental:getMoney', bikeType, amount)
-            end
-        end,
-        function(data, menu)
-            menu.close()
+    local menu = MenuV:CreateMenu('Bike Rental', 'Chose a bike', 'topleft', 255, 0, 0)
+    time = menu:AddRange({ icon = '🕒', label = "Time", description = "How many time do you want to rent this bike? (In minutes)", value = 1, min = 1, max = 60, disabled = false });
+    time:On('select', function(item, value)
+        local amount = tonumber(value)
+        if amount == nil or amount >= 59 then
+            Screen.ShowNotification('~r~Invalid~s~ amount or you want to rent it for ~r~too long~s~! (min: ~o~1~s~, max: ~g~59~s~)')
+        elseif amount == 0 then
+            MenuV:CloseMenu(menu)
+        else
+            MenuV:CloseMenu(menu)
+            timer = amount
+            TriggerServerEvent('arp_bikerental:getMoney', bikeType, amount)
+        end
+        menu.close()
     end)
+    menu:Open()
 end
 
 function hintToDisplay(text)
@@ -228,8 +220,4 @@ function DrawText2D(x, y, width, height, scale, text, r, g, b, a, outline)
 	SetTextEntry("STRING")
 	AddTextComponentString(text)
 	DrawText(x - width/2, y - height/2 + 0.005)
-end
-
-function notification(title, subject, msg, icon, iconIndex)
-    ESX.ShowAdvancedNotification(title, subject, msg, icon, iconIndex)
 end

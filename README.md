@@ -1,24 +1,26 @@
-<h1 align='center'>Bike-Rental</a></h1>
+# Bike-Rental
+
+QB-Core compatible version
+
+[ESX Original version is available here](https://github.com/hoaaiww/arp_bikerental)
 
 #### UPDATE 1.2
 * Fixed the update checking system
 
-#### Working on
-* I'm working on a **Bike-Shop** that can be enabled or disabled in the ```config.lua``` for the server 
-
 ## How it looks like?
 *You can check it [here](https://forum.cfx.re/t/release-arp-bike-rental-advanced-fivem-bike-rental/4767386)*
+*Menus can differ*
+
 ## How is this work?
 
 **You need to go to the places where bikes can be rented and you need to bring money to rent bikes for limited time**
 
 ## How to install
 
-* Git [arp_bikerental](https://github.com/hoaaiww/arp_me_do_try)
+* Git [arp_bikerental](https://github.com/BourotBenjamin/arp_bikerental)
 * Extract ```arp_bikerental-main.rar```
 * Remove ```-main``` from ```arp_bikerental```
-* Copy and paste ```arp_bikerental``` folder to ```resources```
-* Add ```start arp_bikerental``` to your ```server.cfg``` file
+* Copy and paste ```arp_bikerental``` folder to ```resources/[qb]```
 
 ## Customizable script!
 
@@ -26,4 +28,4 @@
 
 ## Dependencies
 
-* [ESX](https://github.com/FXServer-ESX/fxserver-es_extended)
+* [QB-Core](https://forum.cfx.re/t/qbcore-framework/4116674)

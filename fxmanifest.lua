@@ -12,6 +12,7 @@ server_scripts {
 }
 
 client_scripts {
+  '@menuv/menuv.lua',
   'config.lua',
   'client/client.lua'
 }

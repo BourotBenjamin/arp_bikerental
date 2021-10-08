@@ -1,16 +1,13 @@
-ESX 					= nil
 local rentalPrice, bikeName
 local resourceVersion	= 1.2
+local QBCore = exports['qb-core']:GetCoreObject()
 
-TriggerEvent('esx:getSharedObject', function(obj)
-	ESX = obj
-end)
 
 RegisterServerEvent('arp_bikerental:getMoney')
 AddEventHandler('arp_bikerental:getMoney', function(vehicleType, rentalTime)
 	local _source = source
-	local xPlayer = ESX.GetPlayerFromId(_source)
-	local playerMoney = xPlayer.getMoney()
+	local player = QBCore.Functions.GetPlayer(source)
+	local playerMoney = player.Functions.GetMoney('cash')
 	local paid = false
 
 	if vehicleType == 'cruiser' then
@@ -36,12 +33,13 @@ AddEventHandler('arp_bikerental:getMoney', function(vehicleType, rentalTime)
 		bikeName = Config.BikeNames.tribike3
 	end
 
-	if playerMoney >= rentalPrice * rentalTime then
-		xPlayer.removeMoney(rentalPrice * rentalTime)
+	local dueMoney = rentalPrice * rentalTime
+	if playerMoney >= dueMoney then
+		player.Functions.RemoveMoney('cash', dueMoney, "rented a bike")
 		paid = true
-		notification('You ~g~Successfully~s~ rented a(n) ~b~' .. bikeName .. ' for~y~ '..rentalTime..' minute(s) ~s~for: ~g~' .. Config.Currency .. ' ' .. rentalPrice * rentalTime) 
+		notification('You ~g~Successfully~s~ rented a(n) ~b~' .. bikeName .. ' for~y~ '..rentalTime..' minute(s) ~s~for: ~g~' .. Config.Currency .. ' ' .. dueMoney)
 	else
-		notification('You ~r~do not~s~ have enough money! ~g~' .. Config.Currency .. ' ~y~' .. rentalPrice * rentalTime - playerMoney .. '~s~ ~r~is missing!~s~')
+		notification('You ~r~do not~s~ have enough money! ~g~' .. Config.Currency .. ' ~y~' .. dueMoney - playerMoney .. '~s~ ~r~is missing!~s~')
 	end
 
 	if paid then
